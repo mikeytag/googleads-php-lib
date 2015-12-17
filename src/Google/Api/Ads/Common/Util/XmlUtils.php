@@ -35,6 +35,39 @@ require_once 'Google/Api/Ads/Common/Util/MapUtils.php';
 class XmlUtils {
 
   /**
+   * Removes invalid XML
+   *
+   * @access public
+   * @param string $value
+   * @return string
+   */
+  public static function cleanupXml($value) {
+    $ret = "";
+    $current = null;
+    if (empty($value)) {
+      return $ret;
+    }
+
+    $length = strlen($value);
+    for ($i = 0; $i < $length; $i++) {
+      $current = ord($value{$i});
+      if (($current == 0x9) ||
+          ($current == 0xA) ||
+          ($current == 0xD) ||
+          (($current >= 0x20) && ($current <= 0xD7FF)) ||
+          (($current >= 0xE000) && ($current <= 0xFFFD)) ||
+          (($current >= 0x10000) && ($current <= 0x10FFFF))
+      ) {
+        $ret .= chr($current);
+      } else {
+        $ret .= " ";
+      }
+    }
+    return $ret;
+  }
+
+
+  /**
    * Gets the DOMDocument of the <var>$xml</var>.
    * @param string $xml the XML to create a DOMDocument from
    * @return DOMDocument the DOMDocument of the XML
@@ -43,7 +76,7 @@ class XmlUtils {
   public static function GetDomFromXml($xml) {
     set_error_handler(array('XmlUtils', 'HandleXmlError'));
     $dom = new DOMDocument();
-    $dom->loadXML($xml,
+    $dom->loadXML(self::cleanupXml($xml),
         LIBXML_DTDLOAD | LIBXML_DTDATTR | LIBXML_NOENT | LIBXML_XINCLUDE);
     restore_error_handler();
     return $dom;
